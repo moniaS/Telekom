@@ -11,7 +11,7 @@
 using namespace std;
 
 const int wiersze = 8; //m w sprawozdaniu
-const int bitowNaSlowo = 16;
+const int bitowNaSlowo = 16; //m+n w sprawozdaniu
 
 bool H[wiersze][bitowNaSlowo] = {
                 {1,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0},
@@ -38,7 +38,19 @@ void mnozenie(int wektor[], int Wwynikowy[])
         Wwynikowy[i] %= 2;
     }
 }
-
+int* mnozWektorPrzezH(int wektor[])
+{
+    int* wWynikowy = new int[wiersze];
+    for(int i = 0; i < wiersze; i++)
+    {
+        for(int j = 0; j < bitowNaSlowo; j++)
+        {
+            wWynikowy[i] += wektor[j] * H[i][j];
+        }
+        wWynikowy[i] %= 2;
+    }
+    return wWynikowy;
+}
 
 void AsciiToBin(int znakAscii)
 {
@@ -50,36 +62,14 @@ void AsciiToBin(int znakAscii)
     }
 }
 
-
 void PlAsciiToBin(int znakAscii)
 {
     znakAscii += 256;
     AsciiToBin(znakAscii);
 }
 
-int *mnozWektorPrzezH(int wektor[])
-{
-    int* wWynikowy = new int[wiersze];
-    for (int i=0; i <wiersze; i++) {
-            wWynikowy[i]=0;
-        cout<<wWynikowy[i]<<"--<--"<<endl;
-    }
-    for(int i = 0; i < wiersze; i++)
-    {
-        for(int j = 0; j < bitowNaSlowo; j++)
-        {
-            wWynikowy[i] += wektor[j] * H[i][j];
-        }
-        wWynikowy[i] %= 2;
-
-    }
-    return wWynikowy;
-}
-
 void kodowanie(char znak)
 {
-    static int AC[wiersze];
-    //przeksztalcenie na kod ASCII
 	if(znak > 0) //polskie znaki maja bit znaku ustawiony na 1 wiec sa ujemne
     {
         AsciiToBin(znak);
@@ -89,15 +79,13 @@ void kodowanie(char znak)
         PlAsciiToBin(znak);
     }
 	//obliczanie sumy kontrolnej na podstawie kodu ASCII
-    int* bityParzystosci = new int[wiersze];
-    bityParzystosci = mnozWektorPrzezH(T);
-    mnozenie(T, AC);
-    for (int i=0; i< wiersze; i++) {
-        cout<<AC[i]<<"  "<<bityParzystosci[i]<<endl;
-    }
+    int* bityParzystosci = mnozWektorPrzezH(T);
+
     //uzupelnij tablice o bity kontrolne
-    for(int i = 8, j = 0; i < bitowNaSlowo; i++, j++)
-        T[i] = bityParzystosci[j];
+    for(int i = 0; i < wiersze; i++)
+    {
+        T[i + wiersze] = bityParzystosci[i];
+    }
 }
 
 
@@ -244,7 +232,7 @@ string odczytajPlik()
 
 int main()
 {
-	setlocale(LC_ALL,"polish"); //wyœwietlanie polskich znaków
+	setlocale(LC_ALL,"polish"); //wyświetlanie polskich znaków
 
     ofstream plik_out;
     string wiadomosc = odczytajPlik();
@@ -254,27 +242,26 @@ int main()
     plik_out.open("odebrana.txt");
 
 
-    //cout << "Wiadomoœæ do wys³ania: " << wiadomosc << endl;
+    //cout << "Wiadomość do wysłania: " << wiadomosc << endl;
     cout << endl;
 
 	int i = 0;
-    for(string::iterator it = wiadomosc.begin(); it != wiadomosc.end(); ++it)
+	int przesuniecie = 3; //W kodowaniu pliku Windows-1250 musimy pominąć pierwsze 3 znaki.
+    for(string::iterator it = wiadomosc.begin() + przesuniecie; it != wiadomosc.end(); ++it)
     {
-		if(i >2) //W kodowaniu pliku Windows-1250 musimy pomin¹æ pierwsze 3 znaki.
-		{
-			kodowanie(*it);
-			cout << *it << ": ";
-			for(int i = 0; i < bitowNaSlowo; i++)
-			{
-				plik_out << T[i];
-				if(i == bitowNaSlowo-1) plik_out << "\n";
-				cout << T[i];
-				if(i == 7) cout << " | ";
-			}
-			cout << endl;
-		}
-		else i++;
+        kodowanie(*it);
+        cout << *it << ": ";
+        for(int i = 0; i < bitowNaSlowo; i++)
+        {
+            plik_out << T[i];
+            cout << T[i];
+            if(i == 7)
+                cout << " | ";
+        }
+        plik_out << "\n";
+        cout << endl;
     }
+
 
     plik_out.close();
     cout << endl;
@@ -293,7 +280,7 @@ int main()
     for(int i = 0; i < wiadomosc.length()-3; i++) //-3 bo w kodowaniu Windows-1250 pierwsze 3 znaki pomijamy
     {
         getline(plik_in,line);
-        for(int j = 0; j < bitowNaSlowo; j++)
+        for(int j = 0; j <bitowNaSlowo; j++)
         {
             ASCII[j] = (int)line[j]-48;
             cout << ASCII[j];
@@ -311,6 +298,9 @@ int main()
     system("PAUSE");
     return 0;
 }
+
+
+
 
 
 
