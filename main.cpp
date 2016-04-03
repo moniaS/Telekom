@@ -12,6 +12,9 @@ using namespace std;
 
 const int wiersze = 8; //m w sprawozdaniu
 const int bitowNaSlowo = 16; //m+n w sprawozdaniu
+const char* PLIK_WYSYLANA = "wysylana.txt";
+const char* PLIK_ODEBRANA = "odebrana.txt";
+const int PRZESUNIECIE = 3; //W kodowaniu pliku Windows-1250 musimy pominąć pierwsze 3 znaki.
 
 bool H[wiersze][bitowNaSlowo] = {
                 {1,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0},
@@ -79,12 +82,13 @@ void kodowanie(char znak)
         PlAsciiToBin(znak);
     }
 	//obliczanie sumy kontrolnej na podstawie kodu ASCII
-    int* bityParzystosci = mnozWektorPrzezH(T);
+	static int bityKontrolne[wiersze];
+    mnozenie(T,bityKontrolne);
 
     //uzupelnij tablice o bity kontrolne
     for(int i = 0; i < wiersze; i++)
     {
-        T[i + wiersze] = bityParzystosci[i];
+        T[i + wiersze] = bityKontrolne[i];
     }
 }
 
@@ -224,47 +228,42 @@ string odczytajPlik()
 {
     ifstream plik_in;
     string wiadomosc;
-    plik_in.open("wysylana.txt");  //otwarcie pliku zawierajacego wiadomosc do "przeslania"
+    plik_in.open(PLIK_WYSYLANA);  //otwarcie pliku zawierajacego wiadomosc do "przeslania"
     getline(plik_in,wiadomosc);        //pobranie wiadomosci z pliku
     plik_in.close();
     return wiadomosc;
 }
 
-int main()
-{
-	setlocale(LC_ALL,"polish"); //wyświetlanie polskich znaków
-
-    ofstream plik_out;
-    string wiadomosc = odczytajPlik();
-
-//KODOWANIE
-
-    plik_out.open("odebrana.txt");
-
-
-    //cout << "Wiadomość do wysłania: " << wiadomosc << endl;
+//Pobiera bity z tablicy T w ktorej jest akrualnie wysylane slowo
+void wypiszBityDoPlikuIkonsoli(ofstream &plik_out) {
+    for(int i = 0; i < bitowNaSlowo; i++)
+    {
+        plik_out << T[i];
+        cout << T[i];
+        if(i==7)
+            cout<<" ";
+    }
+    plik_out << "\n";
     cout << endl;
+}
 
-	int i = 0;
-	int przesuniecie = 3; //W kodowaniu pliku Windows-1250 musimy pominąć pierwsze 3 znaki.
-    for(string::iterator it = wiadomosc.begin() + przesuniecie; it != wiadomosc.end(); ++it)
+void zakodujIWypisz(string wiadomosc) {
+    ofstream plik_out;
+    plik_out.open(PLIK_ODEBRANA);
+    for(string::iterator it = wiadomosc.begin() + PRZESUNIECIE; it != wiadomosc.end(); ++it)
     {
         kodowanie(*it);
         cout << *it << ": ";
-        for(int i = 0; i < bitowNaSlowo; i++)
-        {
-            plik_out << T[i];
-            cout << T[i];
-            if(i == 7)
-                cout << " | ";
-        }
-        plik_out << "\n";
-        cout << endl;
+        wypiszBityDoPlikuIkonsoli(plik_out);
     }
-
-
     plik_out.close();
-    cout << endl;
+}
+
+int main()
+{
+	setlocale(LC_ALL,"polish"); //wyświetlanie polskich znaków
+    string wiadomosc = odczytajPlik();
+    zakodujIWypisz(wiadomosc);
 
     system("PAUSE");
     cout << endl;
