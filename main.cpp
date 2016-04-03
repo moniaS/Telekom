@@ -27,7 +27,7 @@ bool H[wiersze][bitowNaSlowo] = {
                 {1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1}};
 
 int Decode[wiersze];       //wektor otrzymany przy dekodowaniu
-int ASCII[bitowNaSlowo];
+int R[bitowNaSlowo];
 int T[bitowNaSlowo];
 
 void mnozenie(int wektor[], int Wwynikowy[])
@@ -98,7 +98,7 @@ int naASCII()
     double kodASCII = 0.0;
 
     for(int i = 0, j = 7; i < 8; i++, j--)
-        kodASCII += (ASCII[i] * pow(2.0,j));
+        kodASCII += (R[i] * pow(2.0,j));
 
     return (int)kodASCII;
 }
@@ -170,8 +170,8 @@ int *szukaj2Bledy() throw(string)
 
 void naprawBit(int pozycjaBledu)
 {
-    ASCII[pozycjaBledu] += 1;
-    ASCII[pozycjaBledu] %= 2;
+    R[pozycjaBledu] += 1;
+    R[pozycjaBledu] %= 2;
 }
 
 
@@ -217,7 +217,7 @@ char dekodowanie()
 {
     for(int i = 0; i < wiersze; i++)
         Decode[i] = 0;
-    mnozenie(ASCII, Decode);
+    mnozenie(R, Decode);
 
     if(czyBlad()) napraw1Blad();
     int kodZnaku = naASCII();
@@ -259,6 +259,16 @@ void zakodujIWypisz(string wiadomosc) {
     plik_out.close();
 }
 
+void parsujIWyswietl(string line) {
+    for(int i = 0; i <bitowNaSlowo; i++)
+    {
+        R[i] = line[i]-'0';
+        cout << R[i];
+        if(i == 7)
+            cout << " ";
+    }
+}
+
 int main()
 {
 	setlocale(LC_ALL,"polish"); //wyświetlanie polskich znaków
@@ -268,23 +278,17 @@ int main()
     system("PAUSE");
     cout << endl;
 
-
-//DEKODOWANIE
     char znak;
-    string line;
     ifstream plik_in;
     plik_in.open("odebrana.txt");
 
     cout << "Odebrano: " << endl;
-    for(int i = 0; i < wiadomosc.length()-3; i++) //-3 bo w kodowaniu Windows-1250 pierwsze 3 znaki pomijamy
+    for(int i = 0; i < wiadomosc.length()-PRZESUNIECIE; i++)
     {
+        string line;
         getline(plik_in,line);
-        for(int j = 0; j <bitowNaSlowo; j++)
-        {
-            ASCII[j] = (int)line[j]-48;
-            cout << ASCII[j];
-            if(j == 7) cout << " | ";
-        }
+        parsujIWyswietl(line);
+
         for(int l = 0; l < wiersze; l++)
             Decode[l] = 0;
         cout << " : " << dekodowanie() << endl;
