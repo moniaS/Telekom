@@ -1,5 +1,6 @@
 package moniaimarcin.com.kursywalut;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
@@ -8,8 +9,11 @@ import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -24,23 +28,26 @@ import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private List<String> availableCurrencies = new ArrayList<>();
     private EditText etInput;
     private TextView tvOutput;
     private Spinner inputSpinner;
     private Spinner outputSpinner;
+    private final String TAG = getClass().getSimpleName();
 
     private Callback<CurrencyResponse> mGetCurrenciesCallback = new Callback<CurrencyResponse>() {
         @Override
         public void success(CurrencyResponse currencyResponse, Response response) {
+            Log.i(TAG, "mamy waluty ;)");
             availableCurrencies = currencyResponse.getAvailableCurrencies();
             setSpinnersContent();
         }
 
         @Override
         public void failure(RetrofitError error) {
+            Log.e(TAG, "Error:", error.getCause());
             availableCurrencies = new ArrayList<>();
             String lastInputCurrency = SharedPreferencesManager.getLastInputCurrency(MainActivity.this);
             String lastOutputCurrency = SharedPreferencesManager.getLastOutputCurrency(MainActivity.this);
@@ -54,15 +61,18 @@ public class MainActivity extends AppCompatActivity {
     private Callback<CurrencyResponse> mGetRateCallback = new Callback<CurrencyResponse>() {
         @Override
         public void success(CurrencyResponse currencyResponse, Response response) {
-            double rate = currencyResponse.getRate();
-            updateSharedPreferences(rate);
+            Log.i(TAG, "mamy kurs ;)");
+            updateSharedPreferences(currencyResponse.getRate(), currencyResponse.getDate());
             calculateAndDisplay();
+            displayLastDate();
         }
 
         @Override
         public void failure(RetrofitError error) {
-            Log.e("kupaaa", "kupsko" ,error);
+            Log.e(TAG, "Error:", error.getCause());
             showAlertDialog();
+            inputSpinner.setSelection(getCurrencyPostion(SharedPreferencesManager.getLastInputCurrency(MainActivity.this)));
+            outputSpinner.setSelection(getCurrencyPostion(SharedPreferencesManager.getLastOutputCurrency(MainActivity.this)));
         }
     };
 
@@ -70,24 +80,55 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         initViews();
+        displayLastDate();
+        sendCurrenciesRequest();
+    }
 
-        new CurrencyRestAdapter().getAvailableCurrencies(mGetCurrenciesCallback);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.refreshCurrencies:
+                sendCurrenciesRequest();
+                break;
+            case R.id.refreshRate:
+                sendRateRequest();
+                break;
+        }
+
+        return true;
+    }
+
+    private void displayLastDate() {
+        ((TextView) findViewById(R.id.tvLastDate)).setText("Kurs waluty z dnia " + SharedPreferencesManager.getLastRateDate(MainActivity.this));
     }
 
     private void showAlertDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Dupa nie internet");
-        builder.setMessage("Nie ma neta, działasz na ostanich danych, w menu opcji masz opcje synchronizacji, gl hf");
+        builder.setTitle("Błąd");
+        builder.setMessage("Brak połączenia z internetem. \nDziałasz na ostatnio pobranych danych.\nW menu masz opcję synchronizacji.");
+        builder.setPositiveButton("OK", null);
         builder.create().show();
     }
 
     private void initViews() {
         initSpinners();
+        findViewById(R.id.main_layout).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+            }
+        });
         tvOutput = (TextView) findViewById(R.id.tvOutput);
         etInput = (EditText) findViewById(R.id.etInput);
         etInput.addTextChangedListener(new TextWatcher() {
@@ -124,13 +165,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void calculateAndDisplay() {
-        double inputValue = Double.parseDouble(etInput.getText().toString());
+        String input = etInput.getText().toString();
+        double inputValue = input.isEmpty() ? 0 : Double.parseDouble(input);
         Double outputValue = inputValue * SharedPreferencesManager.getLastRate(this);
-        tvOutput.setText(outputValue.toString());
+        tvOutput.setText(String.format("%.2f", outputValue));
     }
 
     private void sendRateRequest() {
         new CurrencyRestAdapter().getRate((String) inputSpinner.getSelectedItem(), (String) outputSpinner.getSelectedItem(), mGetRateCallback);
+    }
+
+    private void sendCurrenciesRequest() {
+        new CurrencyRestAdapter().getAvailableCurrencies(mGetCurrenciesCallback);
+    }
+
+    private void updateSharedPreferences(double rate, String date) {
+        updateSharedPreferences(rate);
+        SharedPreferencesManager.saveLastRateDate(this, date);
     }
 
     private void updateSharedPreferences(double rate) {
@@ -151,6 +202,15 @@ public class MainActivity extends AppCompatActivity {
         return 0;
     }
 
+    @Override
+    public void onClick(View v) {
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
     private class OnCurrencySelectedListener implements AdapterView.OnItemSelectedListener {
         private boolean isInputSpinner;
         private Context context;
@@ -159,18 +219,18 @@ public class MainActivity extends AppCompatActivity {
             this.isInputSpinner = isInputSpinner;
             this.context = context;
         }
+
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             boolean switchOutputSpinner = isInputSpinner && (inputSpinner.getSelectedItem()).equals(SharedPreferencesManager.getLastOutputCurrency(context));
             if (switchOutputSpinner) {
                 outputSpinner.setSelection(getCurrencyPostion(SharedPreferencesManager.getLastInputCurrency(context)));
-
             } else if (!isInputSpinner && (outputSpinner.getSelectedItem()).equals(SharedPreferencesManager.getLastInputCurrency(context))) {
                 inputSpinner.setSelection(getCurrencyPostion(SharedPreferencesManager.getLastOutputCurrency(context)));
             }
             if (availableCurrencies.size() > 2) {
                 sendRateRequest();
-            } else if (switchOutputSpinner){
+            } else if (isInputSpinner) {
                 //TU JEST TAKI MYK, bo chodzi o to ze ta funkcja przy zamianie tej samej waluty wywlouje sie dwa razy,
                 // a nie chcemy zeby sie wywyolywala 2 razy wiec dajemy tu ifa #notMyCode
                 updateSharedPreferences(1 / SharedPreferencesManager.getLastRate(context));

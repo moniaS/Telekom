@@ -8,7 +8,8 @@
     android:orientation="vertical"
     tools:context="moniaimarcin.com.kursywalut.MainActivity">
 
-    <LinearLayout
+    <RelativeLayout
+        android:id="@+id/main_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -28,8 +29,9 @@
         </android.support.design.widget.AppBarLayout>
 
         <LinearLayout
+            android:layout_centerVertical="true"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical">
 
             <RelativeLayout
@@ -39,6 +41,7 @@
                 android:layout_marginBottom="16dp">
 
                 <EditText
+                    android:textSize="32sp"
                     android:id="@+id/etInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -73,6 +76,14 @@
                     android:layout_alignParentRight="true" />
             </RelativeLayout>
         </LinearLayout>
-    </LinearLayout>
+
+        <TextView
+            android:layout_marginBottom="16dp"
+            android:id="@+id/tvLastDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_alignParentBottom="true" />
+    </RelativeLayout>
 
 </android.support.design.widget.CoordinatorLayout>

@@ -11,6 +11,7 @@ public abstract class SharedPreferencesManager {
     private static final String INPUT_CURRENCY_KEY = "inputCurrency";
     private static final String OUTPUT_CURRENCY_KEY = "outputCurrency";
     private static final String LAST_RATE_KEY = "lastRate";
+    private static final String LAST_RATE_DATE_KEY = "lastRateDate";
 
     public static void saveLastInputCurrency(Context context, String currency) {
         SharedPreferences.Editor spEditor = getSharedPreferences(context).edit();
@@ -28,6 +29,16 @@ public abstract class SharedPreferencesManager {
         SharedPreferences.Editor spEditor = getSharedPreferences(context).edit();
         spEditor.putFloat(LAST_RATE_KEY, (float) rate);
         spEditor.apply();
+    }
+
+    public static void saveLastRateDate(Context context, String date) {
+        SharedPreferences.Editor spEditor = getSharedPreferences(context).edit();
+        spEditor.putString(LAST_RATE_DATE_KEY, date);
+        spEditor.apply();
+    }
+
+    public static String getLastRateDate(Context context) {
+        return getSharedPreferences(context).getString(LAST_RATE_DATE_KEY, "");
     }
 
     public static String getLastInputCurrency(Context context) {

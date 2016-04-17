@@ -4,7 +4,6 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,5 +30,8 @@ public class CurrencyResponse {
 
     public Double getRate() {
         return (Double) rates.values().toArray()[0];
+    }
+    public String getDate() {
+        return date;
     }
 }
