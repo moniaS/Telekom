@@ -54,6 +54,7 @@
                     android:id="@+id/inputCurrencySpinner"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
                     android:layout_alignParentRight="true" />
             </RelativeLayout>
             <RelativeLayout
@@ -85,5 +86,8 @@
             android:layout_centerHorizontal="true"
             android:layout_alignParentBottom="true" />
     </RelativeLayout>
+
+    <include android:id="@+id/loadingPanel"
+        layout="@layout/loading_panel"/>
 
 </android.support.design.widget.CoordinatorLayout>

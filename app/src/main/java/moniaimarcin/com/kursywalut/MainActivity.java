@@ -35,11 +35,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView tvOutput;
     private Spinner inputSpinner;
     private Spinner outputSpinner;
+    private View loadingPanel;
     private final String TAG = getClass().getSimpleName();
 
     private Callback<CurrencyResponse> mGetCurrenciesCallback = new Callback<CurrencyResponse>() {
         @Override
         public void success(CurrencyResponse currencyResponse, Response response) {
+            loadingPanel.setVisibility(View.GONE);
             Log.i(TAG, "mamy waluty ;)");
             availableCurrencies = currencyResponse.getAvailableCurrencies();
             setSpinnersContent();
@@ -47,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         @Override
         public void failure(RetrofitError error) {
+            loadingPanel.setVisibility(View.GONE);
             Log.e(TAG, "Error:", error.getCause());
             availableCurrencies = new ArrayList<>();
             String lastInputCurrency = SharedPreferencesManager.getLastInputCurrency(MainActivity.this);
@@ -61,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Callback<CurrencyResponse> mGetRateCallback = new Callback<CurrencyResponse>() {
         @Override
         public void success(CurrencyResponse currencyResponse, Response response) {
+            loadingPanel.setVisibility(View.GONE);
             Log.i(TAG, "mamy kurs ;)");
             updateSharedPreferences(currencyResponse.getRate(), currencyResponse.getDate());
             calculateAndDisplay();
@@ -69,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         @Override
         public void failure(RetrofitError error) {
+            loadingPanel.setVisibility(View.GONE);
             Log.e(TAG, "Error:", error.getCause());
             showAlertDialog();
             inputSpinner.setSelection(getCurrencyPostion(SharedPreferencesManager.getLastInputCurrency(MainActivity.this)));
@@ -129,6 +134,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
             }
         });
+        loadingPanel = findViewById(R.id.loadingPanel);
         tvOutput = (TextView) findViewById(R.id.tvOutput);
         etInput = (EditText) findViewById(R.id.etInput);
         etInput.addTextChangedListener(new TextWatcher() {
@@ -172,10 +178,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void sendRateRequest() {
+        loadingPanel.setVisibility(View.VISIBLE);
         new CurrencyRestAdapter().getRate((String) inputSpinner.getSelectedItem(), (String) outputSpinner.getSelectedItem(), mGetRateCallback);
     }
 
     private void sendCurrenciesRequest() {
+        loadingPanel.setVisibility(View.VISIBLE);
         new CurrencyRestAdapter().getAvailableCurrencies(mGetCurrenciesCallback);
     }
 
